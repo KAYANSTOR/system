@@ -1,0 +1,8 @@
+{
+  "name": "Embroidery ERP",
+  "description": "نظام متكامل لإدارة معمل التطريز: أقمشة العملاء، المبيعات والخصم التلقائي، سندات القبض، مخزن المواد الخام، والإنتاج ورواتب الموظفين",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
