@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   UserRole, Customer, CustomerFabric, Material, MaterialTransaction, 
   Machine, MachineAssignment, ProductionRecord, Employee, AttendanceEntry, 
-  CompanySettings, CustomerTransaction, CustomUser 
+  CompanySettings, CustomerTransaction, CustomUser, SalesInvoice 
 } from './types';
 
 // Importing beautiful sections
@@ -16,6 +16,7 @@ import MaterialsSection from './components/MaterialsSection';
 import ProductionSection from './components/ProductionSection';
 import EmployeesSection from './components/EmployeesSection';
 import SettingsSection from './components/SettingsSection';
+import Sidebar from './components/Sidebar';
 
 // Icons
 import { 
@@ -227,6 +228,7 @@ export default function App() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [attendanceEntries, setAttendanceEntries] = useState<AttendanceEntry[]>([]);
   const [transactions, setTransactions] = useState<CustomerTransaction[]>([]);
+  const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
 
   // Page Navigation State
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -354,6 +356,10 @@ export default function App() {
       // 11. Customer financial ledger transactions
       const ledgerRes = await fetch('/api/customers/ledger-transactions');
       if (ledgerRes.ok) setTransactions(await ledgerRes.json());
+
+      // 12. Sales invoices
+      const invoiceRes = await fetch('/api/sales/invoices');
+      if (invoiceRes.ok) setInvoices(await invoiceRes.json());
 
     } catch (err: any) {
       console.error(err);
@@ -696,41 +702,45 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col antialiased text-right" dir="rtl">
       
       {/* 1. Header Topbar Panel */}
-      <header className="bg-slate-900 text-white shadow-md border-b border-slate-800 shrink-0 no-print">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+      <header className="bg-slate-900 text-white shadow-lg border-t-4 border-amber-500 border-b border-slate-800/80 shrink-0 no-print">
+        <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
           
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             {settings.logo_base64 ? (
               <img 
                 src={settings.logo_base64} 
                 alt="Logo" 
-                className="h-10 w-10 object-contain bg-white rounded-lg p-0.5"
+                className="h-11 w-11 object-contain bg-white rounded-xl p-1 shadow-md border border-amber-500/30"
               />
             ) : (
-              <div className="h-10 w-10 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-black shadow-xs">
-                <Building size={20} />
+              <div className="h-11 w-11 bg-gradient-to-br from-indigo-700 to-indigo-500 text-white rounded-xl flex items-center justify-center font-black shadow-lg border border-amber-500/20 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-200 via-indigo-950 to-indigo-950" />
+                <Building size={20} className="text-amber-300 relative z-10" />
               </div>
             )}
             <div>
-              <h1 className="text-sm font-black tracking-tight">{settings.company_name}</h1>
-              <p className="text-[10px] text-slate-400">نظام تخطيط موارد معمل التطريز المتكامل | Embroidery ERP</p>
+              <h1 className="text-sm font-black tracking-tight flex items-center gap-1.5 text-slate-100">
+                <span>{settings.company_name}</span>
+                <span className="text-[10px] font-extrabold text-amber-500 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">نخبة التطريز</span>
+              </h1>
+              <p className="text-[10px] text-slate-400 font-medium">النظام السحابي المتكامل للتخطيط الشامل | KayanSoft ERP</p>
             </div>
           </div>
 
           {/* Quick Info & Role Swapper (FR-1) */}
-          <div className="flex flex-wrap items-center gap-4 text-xs">
-            <span className="hidden sm:inline bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md font-bold">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="hidden sm:inline bg-slate-800/50 border border-slate-700/40 text-slate-300 px-3 py-1.5 rounded-xl font-bold">
               العنوان: {settings.address || 'اليمن'}
             </span>
-            <span className="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md font-bold">
+            <span className="bg-slate-800/50 border border-slate-700/40 text-slate-300 px-3 py-1.5 rounded-xl font-bold">
               الهاتف: {settings.phone || 'غير مسجل'}
             </span>
 
             {/* Simulated Live Role Status */}
-            <div className="flex items-center gap-1.5 bg-indigo-950 text-indigo-300 p-1.5 rounded-xl border border-indigo-800">
-              <span className="text-[10px] text-indigo-400 font-bold px-1">الحساب النشط:</span>
-              <span className="font-extrabold text-[11px] text-white bg-indigo-600 px-2 py-0.5 rounded-lg">
+            <div className="flex items-center gap-2 bg-indigo-950/80 text-indigo-300 px-2.5 py-1.5 rounded-xl border border-indigo-800/60 shadow-inner">
+              <span className="text-[10px] text-indigo-300/80 font-extrabold">الحساب النشط:</span>
+              <span className="font-extrabold text-[11px] text-white bg-indigo-600/90 border border-amber-500/20 px-2 py-0.5 rounded-lg">
                 {currentUser.fullName} ({currentUser.roleLabel})
               </span>
             </div>
@@ -739,7 +749,7 @@ export default function App() {
             <button
               onClick={fetchAllData}
               title="تحديث البيانات فوراً"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg transition-colors cursor-pointer"
+              className="bg-indigo-600/90 hover:bg-indigo-700 text-white p-2 rounded-xl border border-indigo-500/20 transition-all cursor-pointer flex items-center justify-center active:scale-95 shadow-md shadow-indigo-950/20"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -748,9 +758,9 @@ export default function App() {
             <button
               onClick={handleLogout}
               title="تسجيل الخروج"
-              className="bg-rose-600 hover:bg-rose-700 text-white p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 font-bold"
+              className="bg-rose-950/50 text-rose-300 hover:bg-rose-900 hover:text-white p-2 px-3 rounded-xl border border-rose-800/40 transition-all cursor-pointer flex items-center gap-1.5 font-bold active:scale-95 shadow-sm"
             >
-              <LogOut size={14} />
+              <LogOut size={13} className="text-rose-400" />
               <span className="hidden sm:inline text-[11px]">خروج</span>
             </button>
           </div>
@@ -774,45 +784,14 @@ export default function App() {
       <div className="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row gap-5 p-4 min-h-0 pb-20 md:pb-4">
         
         {/* Sidebar Left Drawer (no-print) */}
-        <aside className="md:w-64 bg-white rounded-3xl border border-slate-100 p-4 shadow-xs shrink-0 h-fit no-print hidden md:block">
-          <div className="space-y-4">
-            <div className="border-b border-slate-50 pb-2">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">أقسام وشاشات النظام المتاحة</span>
-            </div>
-
-            <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-              {allowedTabs.map((tab) => {
-                const TabIcon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    id={`sidebar-tab-${tab.id}`}
-                    onClick={() => {
-                      setPrefillInvoice(null);
-                      setActiveTab(tab.id);
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                      isActive
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <TabIcon size={16} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="border-t border-slate-50 pt-3 hidden md:block">
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-[10px] text-slate-500 leading-normal space-y-1">
-                <span className="font-extrabold block text-slate-700">دليل الصلاحيات الفعال:</span>
-                <p>تخضع شاشات النظام والميزانيات لرقابة صارمة تضمن عدم تسرب معلومات كشف الرواتب، مسيرات العمال، وصناديق الحسابات لغير المدراء.</p>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <Sidebar 
+          allowedTabs={allowedTabs} 
+          activeTab={activeTab} 
+          onTabChange={(tabId) => {
+            setPrefillInvoice(null);
+            setActiveTab(tabId);
+          }} 
+        />
 
         {/* Workspace Center Content (renders printable pages as full sheets) */}
         <main className="flex-1 min-h-0 bg-transparent print:p-0">
@@ -911,6 +890,7 @@ export default function App() {
                   userRole={userRole}
                   customers={customers}
                   fabrics={fabrics}
+                  invoices={invoices}
                   prefilledInvoiceData={prefillInvoice}
                   onIssueInvoice={handleIssueInvoice}
                 />

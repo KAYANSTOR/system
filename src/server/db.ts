@@ -392,6 +392,10 @@ export class DatabaseManager {
     return { invoice: newInvoice, leftover: leftoverFabric };
   }
 
+  static getSalesInvoices(): SalesInvoice[] {
+    return this.load().sales_invoices || [];
+  }
+
   // --- Receipts ---
   static createReceipt(receipt: Omit<Receipt, 'id' | 'receipt_no'>): Receipt {
     const db = this.load();

@@ -48,7 +48,10 @@ export default function CustomersSection({
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split('T')[0]);
   const [receiptError, setReceiptError] = useState('');
 
-  const canEdit = userRole === 'admin' || userRole === 'sales';
+  // Sub-tabs for selected customer
+  const [custSubTab, setCustSubTab] = useState<'ledger' | 'fabrics'>('ledger');
+
+  const canEdit = userRole === 'admin';
 
   // Filters
   const filteredCustomers = customers.filter(c => 
@@ -273,118 +276,146 @@ export default function CustomersSection({
               </div>
             </div>
 
-            {/* Fabrics Inventory Panel */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm no-print">
-              <h3 className="font-extrabold text-slate-800 text-sm mb-3.5 flex items-center gap-1.5">
-                <FileText className="text-indigo-500" size={16} />
-                رصيد أقمشة العميل المتوفرة بالمخزن
-              </h3>
-              {customerFabrics.length === 0 ? (
-                <div className="text-center py-6 border border-dashed border-slate-200 rounded-2xl">
-                  <p className="text-xs text-slate-400">لا يوجد أقمشة مسجلة حالياً لهذا العميل</p>
-                  {canEdit && (
-                    <button
-                      onClick={() => onNavigateToTab('fabrics', { customer_id: selectedCustomer.id })}
-                      className="text-xs text-indigo-600 font-bold underline mt-1 block hover:text-indigo-700"
-                    >
-                      اضغط هنا لاستلام دفعة أقمشة منه
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {customerFabrics.map((fabric) => {
-                    const isLeftover = fabric.is_leftover;
-                    return (
-                      <div 
-                        key={fabric.id} 
-                        className={`p-3.5 rounded-xl border relative transition-all ${
-                          isLeftover 
-                            ? 'bg-amber-50/50 border-amber-200' 
-                            : 'bg-white border-slate-100 hover:border-slate-200 shadow-xs'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="font-bold text-slate-800 text-xs block">{fabric.fabric_type}</span>
-                          {isLeftover && (
-                            <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm">
-                              فارغة متبقية
-                            </span>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mt-3 text-[11px] text-slate-500 border-t border-slate-50 pt-2">
-                          <div>
-                            <span className="text-slate-400 block">عدد الطيقان:</span>
-                            <span className="font-bold text-slate-700 text-xs">{fabric.rolls_count} طاقة</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block">الرصيد المتاح:</span>
-                            <span className={`font-extrabold text-xs block ${fabric.remaining_yards > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
-                              {fabric.remaining_yards} <span className="text-[10px]">وار</span>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-[9px] text-slate-400 mt-2 flex justify-between">
-                          <span>تاريخ الاستلام: {fabric.received_date}</span>
-                          {fabric.total_yards !== fabric.remaining_yards && (
-                            <span>الإجمالي المستلم: {fabric.total_yards} وار</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            {/* Customer Section Sub-Tabs Navigation */}
+            <div className="flex border-b border-slate-100 no-print bg-slate-50 p-1 rounded-xl">
+              <button
+                onClick={() => setCustSubTab('ledger')}
+                className={`flex-1 py-2.5 rounded-lg text-center text-xs font-bold transition-all cursor-pointer ${
+                  custSubTab === 'ledger'
+                    ? 'bg-white text-indigo-600 shadow-xs border border-slate-100'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                كشف الحساب والعمليات المتبادلة ({customerTransactions.length})
+              </button>
+              <button
+                onClick={() => setCustSubTab('fabrics')}
+                className={`flex-1 py-2.5 rounded-lg text-center text-xs font-bold transition-all cursor-pointer ${
+                  custSubTab === 'fabrics'
+                    ? 'bg-white text-indigo-600 shadow-xs border border-slate-100'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                رصيد مخزن الأقمشة المستلمة ({customerFabrics.length})
+              </button>
             </div>
 
+            {/* Fabrics Inventory Panel */}
+            {custSubTab === 'fabrics' && (
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm no-print animate-fade-in">
+                <h3 className="font-extrabold text-slate-800 text-sm mb-3.5 flex items-center gap-1.5">
+                  <FileText className="text-indigo-500" size={16} />
+                  رصيد أقمشة العميل المتوفرة بالمخزن
+                </h3>
+                {customerFabrics.length === 0 ? (
+                  <div className="text-center py-6 border border-dashed border-slate-200 rounded-2xl">
+                    <p className="text-xs text-slate-400">لا يوجد أقمشة مسجلة حالياً لهذا العميل</p>
+                    {canEdit && (
+                      <button
+                        onClick={() => onNavigateToTab('fabrics', { customer_id: selectedCustomer.id })}
+                        className="text-xs text-indigo-600 font-bold underline mt-1 block hover:text-indigo-700"
+                      >
+                        اضغط هنا لاستلام دفعة أقمشة منه
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {customerFabrics.map((fabric) => {
+                      const isLeftover = fabric.is_leftover;
+                      return (
+                        <div 
+                          key={fabric.id} 
+                          className={`p-3.5 rounded-xl border relative transition-all ${
+                            isLeftover 
+                              ? 'bg-amber-50/50 border-amber-200' 
+                              : 'bg-white border-slate-100 hover:border-slate-200 shadow-xs'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <span className="font-bold text-slate-800 text-xs block">{fabric.fabric_type}</span>
+                            {isLeftover && (
+                              <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm">
+                                فارغة متبقية
+                              </span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mt-3 text-[11px] text-slate-500 border-t border-slate-50 pt-2">
+                            <div>
+                              <span className="text-slate-400 block">عدد الطيقان:</span>
+                              <span className="font-bold text-slate-700 text-xs">{fabric.rolls_count} طاقة</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">الرصيد المتاح:</span>
+                              <span className={`font-extrabold text-xs block ${fabric.remaining_yards > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                {fabric.remaining_yards} <span className="text-[10px]">وار</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-[9px] text-slate-400 mt-2 flex justify-between">
+                            <span>تاريخ الاستلام: {fabric.received_date}</span>
+                            {fabric.total_yards !== fabric.remaining_yards && (
+                              <span>الإجمالي المستلم: {fabric.total_yards} وار</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Financial Ledger (Transactions) */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm no-print">
-              <h3 className="font-extrabold text-slate-800 text-sm mb-3 flex items-center gap-1.5">
-                <Landmark className="text-indigo-500" size={16} />
-                سجل الحركة المالية المفصل (كشف الحساب)
-              </h3>
-              {customerTransactions.length === 0 ? (
-                <p className="text-center text-xs text-slate-400 py-6">لا توجد عمليات مالية مسجلة</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
-                        <th className="p-2.5 rounded-r-lg">التاريخ</th>
-                        <th className="p-2.5">البيان والعملية</th>
-                        <th className="p-2.5 text-center">المبلغ المستحق (+)</th>
-                        <th className="p-2.5 text-center">المبلغ المدفوع (-)</th>
-                        <th className="p-2.5 text-left rounded-l-lg">الرصيد بعد الحركة</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {customerTransactions.map((tx) => {
-                        const isSale = tx.type === 'sale';
-                        const isReceipt = tx.type === 'receipt';
-                        const isInit = tx.type === 'initial_balance';
-                        return (
-                          <tr key={tx.id} className="hover:bg-slate-50/50">
-                            <td className="p-2.5 text-slate-400 font-mono text-[10px]">{tx.date}</td>
-                            <td className="p-2.5 font-medium text-slate-700 max-w-[280px]">
-                              <span className="block">{tx.notes}</span>
-                            </td>
-                            <td className="p-2.5 text-center font-bold text-slate-700">
-                              {(isSale || isInit) ? tx.amount.toLocaleString() : '-'}
-                            </td>
-                            <td className="p-2.5 text-center font-bold text-emerald-600">
-                              {isReceipt ? tx.amount.toLocaleString() : '-'}
-                            </td>
-                            <td className="p-2.5 text-left font-extrabold font-mono text-slate-900">
-                              {tx.balance_after.toLocaleString()}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            {custSubTab === 'ledger' && (
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm no-print animate-fade-in">
+                <h3 className="font-extrabold text-slate-800 text-sm mb-3 flex items-center gap-1.5">
+                  <Landmark className="text-indigo-500" size={16} />
+                  سجل الحركة المالية المفصل (كشف الحساب)
+                </h3>
+                {customerTransactions.length === 0 ? (
+                  <p className="text-center text-xs text-slate-400 py-6">لا توجد عمليات مالية مسجلة</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
+                          <th className="p-2.5 rounded-r-lg">التاريخ</th>
+                          <th className="p-2.5">البيان والعملية</th>
+                          <th className="p-2.5 text-center">المبلغ المستحق (+)</th>
+                          <th className="p-2.5 text-center">المبلغ المدفوع (-)</th>
+                          <th className="p-2.5 text-left rounded-l-lg">الرصيد بعد الحركة</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {customerTransactions.map((tx) => {
+                          const isSale = tx.type === 'sale';
+                          const isReceipt = tx.type === 'receipt';
+                          const isInit = tx.type === 'initial_balance';
+                          return (
+                            <tr key={tx.id} className="hover:bg-slate-50/50">
+                              <td className="p-2.5 text-slate-400 font-mono text-[10px]">{tx.date}</td>
+                              <td className="p-2.5 font-medium text-slate-700 max-w-[280px]">
+                                <span className="block">{tx.notes}</span>
+                              </td>
+                              <td className="p-2.5 text-center font-bold text-slate-700">
+                                {(isSale || isInit) ? tx.amount.toLocaleString() : '-'}
+                              </td>
+                              <td className="p-2.5 text-center font-bold text-emerald-600">
+                                {isReceipt ? tx.amount.toLocaleString() : '-'}
+                              </td>
+                              <td className="p-2.5 text-left font-extrabold font-mono text-slate-900">
+                                {tx.balance_after.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* --- PRISTINE FULLY STYLED PRINT LEDGER SHEET --- */}
             <div className="hidden print:block print-card bg-white p-6 leading-relaxed">

@@ -3,9 +3,30 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { DatabaseManager } from './src/server/db';
 import { UserRole } from './src/types';
+import { GoogleGenAI } from "@google/genai";
 
 const app = express();
 const PORT = 3000;
+
+// Initialize GoogleGenAI client for Antigravity AI Insights
+let aiClient: any = null;
+if (process.env.GEMINI_API_KEY) {
+  try {
+    aiClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+    console.log("Antigravity Core: Gemini client initialized successfully.");
+  } catch (err) {
+    console.error("Antigravity Core: Failed to initialize Gemini client:", err);
+  }
+} else {
+  console.warn("Antigravity Core: GEMINI_API_KEY is not defined. AI insights will fallback to offline algorithmic rule-based insights.");
+}
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -92,7 +113,7 @@ app.get('/api/customers', requireAuth, (req, res) => {
   res.json(DatabaseManager.getCustomers());
 });
 
-app.post('/api/customers', requireAuth, requireRoles(['admin', 'sales']), (req, res) => {
+app.post('/api/customers', requireAuth, requireRoles(['admin']), (req, res) => {
   const { name, phone, address, notes } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'اسم العميل مطلوب' });
@@ -111,7 +132,7 @@ app.get('/api/fabrics', requireAuth, (req, res) => {
   res.json(DatabaseManager.getFabrics(customerId as string));
 });
 
-app.post('/api/fabrics', requireAuth, requireRoles(['admin', 'sales', 'fabric_manager']), (req, res) => {
+app.post('/api/fabrics', requireAuth, requireRoles(['admin']), (req, res) => {
   const { customer_id, fabric_type, rolls_count, total_yards, received_date, notes } = req.body;
   if (!customer_id || !fabric_type || !rolls_count || !total_yards) {
     return res.status(400).json({ error: 'الرجاء إدخال تفاصيل القماش كاملة' });
@@ -128,7 +149,7 @@ app.post('/api/fabrics', requireAuth, requireRoles(['admin', 'sales', 'fabric_ma
 });
 
 // --- SALES INVOICES API (Leftover / Fargha Logic inside!) ---
-app.post('/api/sales/invoice', requireAuth, requireRoles(['admin', 'sales']), (req, res) => {
+app.post('/api/sales/invoice', requireAuth, requireRoles(['admin']), (req, res) => {
   const { customer_id, fabric_id, yards_sold, price_per_yard, paid_amount, payment_type, invoice_date, notes } = req.body;
   
   if (!customer_id || !fabric_id || !yards_sold || !price_per_yard || !payment_type) {
@@ -153,7 +174,7 @@ app.post('/api/sales/invoice', requireAuth, requireRoles(['admin', 'sales']), (r
 });
 
 // --- RECEIPTS API ---
-app.post('/api/receipts', requireAuth, requireRoles(['admin', 'sales']), (req, res) => {
+app.post('/api/receipts', requireAuth, requireRoles(['admin']), (req, res) => {
   const { customer_id, amount, receipt_date, notes } = req.body;
   if (!customer_id || !amount) {
     return res.status(400).json({ error: 'الرجاء تحديد العميل والمبلغ' });
@@ -194,7 +215,7 @@ app.get('/api/materials/movements', requireAuth, requireRoles(['admin', 'materia
   res.json(DatabaseManager.getMaterialTransactions(materialId as string));
 });
 
-app.post('/api/materials/in', requireAuth, requireRoles(['admin', 'materials_manager']), (req, res) => {
+app.post('/api/materials/in', requireAuth, requireRoles(['admin']), (req, res) => {
   const { material_id, quantity, transaction_date, notes } = req.body;
   if (!material_id || !quantity) {
     return res.status(400).json({ error: 'الرجاء إدخال المادة والكمية الموردة' });
@@ -213,7 +234,7 @@ app.post('/api/materials/in', requireAuth, requireRoles(['admin', 'materials_man
   }
 });
 
-app.post('/api/materials/out', requireAuth, requireRoles(['admin', 'materials_manager']), (req, res) => {
+app.post('/api/materials/out', requireAuth, requireRoles(['admin']), (req, res) => {
   const { material_id, quantity, transaction_date, notes } = req.body;
   if (!material_id || !quantity) {
     return res.status(400).json({ error: 'الرجاء إدخال المادة والكمية المصروفة' });
@@ -263,7 +284,7 @@ app.get('/api/production/records', requireAuth, (req, res) => {
   res.json(DatabaseManager.getProductionRecords());
 });
 
-app.post('/api/production/record', requireAuth, requireRoles(['admin', 'production_supervisor']), (req, res) => {
+app.post('/api/production/record', requireAuth, requireRoles(['admin']), (req, res) => {
   const { machine_id, employee_id, receiver_name, stitches_count, panels_count, work_date, shift } = req.body;
   if (!machine_id || !employee_id || !stitches_count || !panels_count || !receiver_name) {
     return res.status(400).json({ error: 'الرجاء تعبئة بيانات إنتاج الوردية بالكامل' });
@@ -566,9 +587,86 @@ app.post('/api/sales', requireAuth, requireRoles(['admin', 'sales']), (req, res)
   }
 });
 
+app.get('/api/sales/invoices', requireAuth, (req, res) => {
+  res.json(DatabaseManager.getSalesInvoices());
+});
+
 // --- CUSTOMER FINANCIAL LEDGER TRANSACTIONS ---
 app.get('/api/customers/ledger-transactions', requireAuth, (req, res) => {
   res.json(DatabaseManager.getAllCustomerTransactions());
+});
+
+// --- ANTIGRAVITY AI INSIGHTS ---
+app.get('/api/antigravity/insights', requireAuth, async (req, res) => {
+  try {
+    const customers = DatabaseManager.getCustomers();
+    const materials = DatabaseManager.getMaterials();
+    const production = DatabaseManager.getProductionRecords();
+    const machines = DatabaseManager.getMachines();
+
+    // 1. Gather stats
+    const totalDebt = customers.reduce((sum, c) => sum + (c.balance > 0 ? c.balance : 0), 0);
+    const lowMaterials = materials.filter(m => m.current_quantity <= m.min_alert_qty);
+    const productionCount = production.length;
+    const totalStitches = production.reduce((sum, p) => sum + p.stitches_count, 0);
+
+    // Prepare metadata
+    const erpSummary = {
+      total_customers: customers.length,
+      total_unpaid_debt: totalDebt,
+      low_stock_items: lowMaterials.map(m => ({ name: m.name, qty: m.current_quantity, min: m.min_alert_qty, unit: m.unit })),
+      production_logs_count: productionCount,
+      total_stitches_embroidered: totalStitches,
+      machines_count: machines.length,
+    };
+
+    if (aiClient) {
+      try {
+        const response = await aiClient.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: `يرجى تحليل حالة معمل التطريز الحالية وتوليد التوصيات: ${JSON.stringify(erpSummary)}`,
+          config: {
+            systemInstruction: "أنت المحرك الذكي الغيميني لمنصة Antigravity المدمجة في نظام كيان سوفت لـ ERP معامل التطريز. تقوم بتحليل بيانات المعمل الفعلية المرفقة وتوليد 3 توصيات ذكية، تنفيذية، وعملية باللغة العربية الفصحى لمساعدة صاحب العمل والمديرين على اتخاذ قرارات دقيقة. ركز على التنبيهات الحرجة مثل المواد التي توشك على النفاذ، تحسين كفاءة الإنتاج، وإدارة ديون العملاء بشكل ودي وحازم. تجنب تماماً العبارات التسويقية والزخارف غير اللازمة. اعرض التوصيات مباشرة بأسلوب مهني باستخدام ماركداون (Markdown).",
+          }
+        });
+
+        if (response && response.text) {
+          return res.json({ source: 'gemini', insights: response.text });
+        }
+      } catch (geminiError: any) {
+        console.error("Failed to query Gemini API, falling back to algorithmic rules:", geminiError);
+      }
+    }
+
+    // Algorithmic Fallback Insights (in perfect human Arabic, fully functional)
+    let fallbackText = `### 💡 تحليلات الذكاء الاصطناعي السريعة (محرك Antigravity الخوارزمي)
+
+1. **إدارة مخزون المواد المستعجلة:**
+   `;
+    if (lowMaterials.length > 0) {
+      fallbackText += `يوجد نقص حرج في المواد التالية: **${lowMaterials.map(m => m.name).join('، ')}**. يُوصى بالتواصل مع الموردين فوراً لتفادي توقف المكائن أو تعطل إنتاج الطلبيات الجارية.`;
+    } else {
+      fallbackText += `مستويات المخزن آمنة لجميع المواد الأساسية والخيوط ولا يوجد نقص حرج في الوقت الحالي.`;
+    }
+
+    fallbackText += `\n\n2. **السيولة وديون العملاء:**\n   `;
+    if (totalDebt > 100000) {
+      fallbackText += `إجمالي الذمم المدينة المستحقة على العملاء يبلغ **${totalDebt.toLocaleString()} ريال**. يوصى بجدولة الدفعات وتقييد تسليم البضائع الآجلة لعملاء متميزين مثل **${customers.slice(0, 2).map(c => c.name).join(' أو ')}** حتى سداد الأرصدة المتراكمة وتحسين التدفق النقدي بالمعمل.`;
+    } else {
+      fallbackText += `معدل ديون العملاء تحت نطاق السيطرة والمخاطر منخفضة، مما يشير إلى التزام جيد بالتسديدات وسندات القبض.`;
+    }
+
+    fallbackText += `\n\n3. **تحسين أداء صالة الإنتاج:**\n   `;
+    if (productionCount > 0) {
+      fallbackText += `تم تسجيل **${productionCount} وردية عمل** بإجمالي غرز بلغ **${totalStitches.toLocaleString()} غرزة**. يوصى بمراجعة توزيع الفترات لضمان تحقيق كفاءة تشغيلية كاملة للمكائن الـ **${machines.length}** في المعمل لتخفيف العبء عن مشرف الوردية ومطابقة كشوفات إنتاج الموظفين بدقة مع سجلات الحضور اليومي لضمان حوافز عادلة.`;
+    } else {
+      fallbackText += `لم يتم تسجيل أي وردية إنتاج في الأيام الأخيرة. يرجى توجيه مشرف الصالة لتسجيل مخرجات المكائن اليومية وتكليفات الموظفين لتفعيل تقارير الكفاءة بشكل حقيقي.`;
+    }
+
+    res.json({ source: 'algorithmic', insights: fallbackText });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 

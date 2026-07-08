@@ -1,16 +1,75 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Cairo", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  /* Remapping Indigo colors to Majestic Royal Emerald */
+  --color-indigo-50: #f0fbf5;
+  --color-indigo-100: #def6e7;
+  --color-indigo-200: #bdedd1;
+  --color-indigo-300: #89dea8;
+  --color-indigo-400: #51c883;
+  --color-indigo-500: #0a9b5f;
+  --color-indigo-600: #076d41; /* Royal Emerald Green */
+  --color-indigo-700: #055432;
+  --color-indigo-800: #033f25;
+  --color-indigo-900: #022717;
+  --color-indigo-950: #01150c;
+
+  /* Remapping Amber to Antique Brushed Gold/Bronze */
+  --color-amber-50: #fdfaf4;
+  --color-amber-100: #faf1df;
+  --color-amber-200: #f2dec0;
+  --color-amber-300: #e8c396;
+  --color-amber-400: #d69e65;
+  --color-amber-500: #c5a880; /* Elegant Antique Gold */
+  --color-amber-600: #b3956e;
+  --color-amber-700: #927753;
+  --color-amber-800: #715b3e;
+  --color-amber-900: #4f3f2a;
+  --color-amber-950: #2d2317;
+
+  /* Remapping Slate to Luxurious Warm Linen / Atelier Ivory */
+  --color-slate-50: #fafaf7; 
+  --color-slate-100: #f3f3eb;
+  --color-slate-200: #e8e8db;
+  --color-slate-300: #d2d2bd;
+  --color-slate-400: #a5a590;
+  --color-slate-500: #7a7a66;
+  --color-slate-600: #5e5e4e;
+  --color-slate-700: #444438;
+  --color-slate-800: #292921;
+  --color-slate-900: #12120d;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #fafaf7;
+  color: #12120d;
   direction: rtl; /* Set default RTL for Arabic Embroidery ERP */
+}
+
+/* Premium micro-interactions and custom design ornaments */
+.luxury-card {
+  background: #ffffff;
+  border: 1px solid rgba(228, 228, 215, 0.6);
+  box-shadow: 0 4px 20px -2px rgba(18, 18, 13, 0.02), 0 2px 6px -1px rgba(18, 18, 13, 0.01);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.luxury-card:hover {
+  transform: translateY(-2px);
+  border-color: #c5a880;
+  box-shadow: 0 12px 30px -4px rgba(7, 109, 65, 0.04), 0 4px 12px -2px rgba(18, 18, 13, 0.02);
+}
+
+.gold-glow {
+  box-shadow: 0 0 15px rgba(197, 168, 128, 0.15);
+}
+
+.emerald-glow {
+  box-shadow: 0 0 15px rgba(7, 109, 65, 0.1);
 }
 
 /* Custom styles for printing */
@@ -37,12 +96,12 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #fafaf7;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d2d2bd;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a5a590;
 }

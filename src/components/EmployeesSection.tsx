@@ -150,39 +150,39 @@ export default function EmployeesSection({
     <div className="p-4 max-w-7xl mx-auto space-y-6">
       
       {/* Navigation tabs */}
-      <div className="flex border-b border-slate-200 no-print">
+      <div className="bg-white border border-slate-200/50 p-1.5 rounded-2xl shadow-xs flex flex-wrap gap-1 no-print">
         <button
           onClick={() => setActiveTab('roster')}
-          className={`pb-3 px-6 text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'roster'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-400 hover:text-slate-600'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
           <Users size={16} />
-          شؤون الموظفين
+          <span>سجل وشؤون الموظفين</span>
         </button>
         <button
           onClick={() => setActiveTab('attendance_log')}
-          className={`pb-3 px-6 text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'attendance_log'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-400 hover:text-slate-600'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
           <ClipboardList size={16} />
-          الترحيل اليومي الجماعي
+          <span>الترحيل اليومي الجماعي</span>
         </button>
         <button
           onClick={() => setActiveTab('payroll')}
-          className={`pb-3 px-6 text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'payroll'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-400 hover:text-slate-600'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
           <Coins size={16} />
-          الرواتب وكشوف الحسابات
+          <span>الرواتب وكشوف الحسابات</span>
         </button>
       </div>
 
